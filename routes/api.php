@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DrugController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,13 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
+
+/**
+ * Public Drug Search Routes
+ * 
+ * No authentication required - accessible to all users
+ */
+Route::get('/drugs/search', [DrugController::class, 'search']);
 
 /**
  * Protected Routes
