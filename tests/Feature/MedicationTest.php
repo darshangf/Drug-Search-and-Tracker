@@ -45,7 +45,7 @@ class MedicationTest extends TestCase
         UserMedication::create(['user_id' => $this->user->id, 'rxcui' => $snapshot3->rxcui]);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->getJson('/api/medications');
+            ->getJson('/api/user/medications');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -72,7 +72,7 @@ class MedicationTest extends TestCase
      */
     public function test_unauthenticated_user_cannot_get_medications(): void
     {
-        $response = $this->getJson('/api/medications');
+        $response = $this->getJson('/api/user/medications');
 
         $response->assertStatus(401);
     }
@@ -104,7 +104,7 @@ class MedicationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->postJson('/api/medications', [
+            ->postJson('/api/user/medications', [
                 'rxcui' => '213269'
             ]);
 
@@ -150,7 +150,7 @@ class MedicationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->postJson('/api/medications', [
+            ->postJson('/api/user/medications', [
                 'rxcui' => 'invalid'
             ]);
 
@@ -185,7 +185,7 @@ class MedicationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->postJson('/api/medications', [
+            ->postJson('/api/user/medications', [
                 'rxcui' => '213269'
             ]);
 
@@ -201,7 +201,7 @@ class MedicationTest extends TestCase
     public function test_adding_medication_requires_rxcui(): void
     {
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->postJson('/api/medications', []);
+            ->postJson('/api/user/medications', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['rxcui']);
@@ -226,7 +226,7 @@ class MedicationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->deleteJson('/api/medications/213269');
+            ->deleteJson('/api/user/medications/213269');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -244,7 +244,7 @@ class MedicationTest extends TestCase
     public function test_deleting_non_existent_medication_returns_404(): void
     {
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->deleteJson('/api/medications/999999');
+            ->deleteJson('/api/user/medications/999999');
 
         $response->assertStatus(404)
             ->assertJson([
@@ -273,7 +273,7 @@ class MedicationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->deleteJson('/api/medications/213269');
+            ->deleteJson('/api/user/medications/213269');
 
         $response->assertStatus(404);
 
@@ -288,7 +288,7 @@ class MedicationTest extends TestCase
      */
     public function test_unauthenticated_user_cannot_add_medication(): void
     {
-        $response = $this->postJson('/api/medications', [
+        $response = $this->postJson('/api/user/medications', [
             'rxcui' => '213269'
         ]);
 
@@ -300,7 +300,7 @@ class MedicationTest extends TestCase
      */
     public function test_unauthenticated_user_cannot_delete_medication(): void
     {
-        $response = $this->deleteJson('/api/medications/213269');
+        $response = $this->deleteJson('/api/user/medications/213269');
 
         $response->assertStatus(401);
     }
@@ -323,7 +323,7 @@ class MedicationTest extends TestCase
         Http::fake();
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->postJson('/api/medications', [
+            ->postJson('/api/user/medications', [
                 'rxcui' => '213269'
             ]);
 
@@ -334,17 +334,17 @@ class MedicationTest extends TestCase
     }
 
     /**
-     * Test snapshot is refreshed if stale
+     * Test snapshot is refreshed if stale when adding medication
      */
-    public function test_snapshot_is_refreshed_if_stale(): void
+    public function test_snapshot_is_refreshed_if_stale_when_adding(): void
     {
-        // Create a stale snapshot (older than 30 days)
+        // Create a stale snapshot (older than 10 days)
         $snapshot = DrugSnapshot::create([
             'rxcui' => '213269',
             'drug_name' => 'Aspirin 81 MG Oral Tablet OLD',
             'ingredient_base_names' => ['Old Ingredient'],
             'dosage_forms' => ['Old Form'],
-            'last_synced_at' => now()->subDays(31),
+            'last_synced_at' => now()->subDays(11),
         ]);
 
         Http::fake([
@@ -369,7 +369,7 @@ class MedicationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
-            ->postJson('/api/medications', [
+            ->postJson('/api/user/medications', [
                 'rxcui' => '213269'
             ]);
 
@@ -385,5 +385,109 @@ class MedicationTest extends TestCase
             'rxcui' => '213269',
             'drug_name' => 'Aspirin 81 MG Oral Tablet NEW',
         ]);
+    }
+
+    /**
+     * Test snapshot is refreshed if stale when fetching medications
+     */
+    public function test_snapshot_is_refreshed_if_stale_when_fetching(): void
+    {
+        // Create a stale snapshot (older than 10 days)
+        $snapshot = DrugSnapshot::create([
+            'rxcui' => '213269',
+            'drug_name' => 'Aspirin 81 MG Oral Tablet OLD',
+            'ingredient_base_names' => ['Old Ingredient'],
+            'dosage_forms' => ['Old Form'],
+            'last_synced_at' => now()->subDays(11),
+        ]);
+
+        // Add medication with stale snapshot
+        UserMedication::create([
+            'user_id' => $this->user->id,
+            'rxcui' => '213269',
+        ]);
+
+        Http::fake([
+            '*/rxcui/213269/properties.json' => Http::response([
+                'properties' => [
+                    'rxcui' => '213269',
+                    'name' => 'Aspirin 81 MG Oral Tablet UPDATED',
+                ]
+            ], 200),
+            '*/rxcui/213269/historystatus.json' => Http::response([
+                'rxcuiStatusHistory' => [
+                    'definitionalFeatures' => [
+                        'ingredientAndStrength' => [
+                            ['baseName' => 'Updated Aspirin']
+                        ],
+                        'doseFormGroupConcept' => [
+                            ['doseFormGroupName' => 'Updated Oral Tablet']
+                        ]
+                    ]
+                ]
+            ], 200),
+        ]);
+
+        // Fetch medications - should trigger snapshot refresh
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+            ->getJson('/api/user/medications');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'count' => 1,
+                'data' => [
+                    [
+                        'rxcui' => '213269',
+                        'drug_name' => 'Aspirin 81 MG Oral Tablet UPDATED',
+                    ]
+                ]
+            ]);
+
+        // Verify snapshot was updated in database
+        $this->assertDatabaseHas('drug_snapshots', [
+            'rxcui' => '213269',
+            'drug_name' => 'Aspirin 81 MG Oral Tablet UPDATED',
+        ]);
+    }
+
+    /**
+     * Test fresh snapshots are not refreshed when fetching
+     */
+    public function test_fresh_snapshot_not_refreshed_when_fetching(): void
+    {
+        // Create a fresh snapshot
+        $snapshot = DrugSnapshot::create([
+            'rxcui' => '213269',
+            'drug_name' => 'Aspirin 81 MG Oral Tablet',
+            'ingredient_base_names' => ['Aspirin'],
+            'dosage_forms' => ['Oral Tablet'],
+            'last_synced_at' => now(),
+        ]);
+
+        // Add medication
+        UserMedication::create([
+            'user_id' => $this->user->id,
+            'rxcui' => '213269',
+        ]);
+
+        // No HTTP calls should be made for fresh snapshot
+        Http::fake();
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+            ->getJson('/api/user/medications');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'count' => 1,
+                'data' => [
+                    [
+                        'rxcui' => '213269',
+                        'drug_name' => 'Aspirin 81 MG Oral Tablet',
+                    ]
+                ]
+            ]);
+
+        // Verify no API calls were made
+        Http::assertNothingSent();
     }
 }

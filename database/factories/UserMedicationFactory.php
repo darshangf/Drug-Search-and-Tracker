@@ -26,4 +26,34 @@ class UserMedicationFactory extends Factory
             'rxcui' => DrugSnapshot::factory(),
         ];
     }
+
+    /**
+     * Associate with a specific user
+     */
+    public function forUser(User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id' => $user->id,
+        ]);
+    }
+
+    /**
+     * Associate with a specific drug snapshot
+     */
+    public function forDrug(DrugSnapshot $drug): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'rxcui' => $drug->rxcui,
+        ]);
+    }
+
+    /**
+     * Create with a specific RXCUI (will create or use existing snapshot)
+     */
+    public function withRxcui(string $rxcui): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'rxcui' => $rxcui,
+        ]);
+    }
 }

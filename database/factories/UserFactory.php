@@ -41,4 +41,37 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Create a user with a specific password.
+     */
+    public function withPassword(string $password): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'password' => Hash::make($password),
+        ]);
+    }
+
+    /**
+     * Create a user with a specific email.
+     */
+    public function withEmail(string $email): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email' => $email,
+        ]);
+    }
+
+    /**
+     * Create a user with medications.
+     */
+    public function withMedications(int $count = 3): static
+    {
+        return $this->afterCreating(function ($user) use ($count) {
+            \App\Models\UserMedication::factory()
+                ->count($count)
+                ->forUser($user)
+                ->create();
+        });
+    }
 }

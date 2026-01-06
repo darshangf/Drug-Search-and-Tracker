@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class DrugSnapshot extends Model
 {
+    use HasFactory;
     /**
      * The primary key for the model.
      */
@@ -62,11 +64,13 @@ class DrugSnapshot extends Model
 
     /**
      * Check if the snapshot is stale and needs refreshing
+     * 
+     * Default: 10 days (matching RxNormService::SNAPSHOT_STALE_DAYS)
      *
-     * @param int $days
+     * @param int $days Number of days before snapshot is considered stale
      * @return bool
      */
-    public function isStale(int $days = 30): bool
+    public function isStale(int $days = 10): bool
     {
         return $this->last_synced_at->addDays($days)->isPast();
     }

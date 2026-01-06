@@ -22,6 +22,8 @@ class UserMedicationController extends Controller
 
     /**
      * Get all medications for authenticated user
+     * 
+     * Automatically refreshes stale snapshots from RxNorm API
      *
      * @param Request $request
      * @return JsonResponse
@@ -38,7 +40,17 @@ class UserMedicationController extends Controller
             'count' => $medications->count(),
             'data' => $medications->map(function ($medication) {
                 $snapshot = $medication->drugSnapshot;
-                
+
+                // Check if snapshot is stale and refresh if needed
+                if ($snapshot->isStale()) {
+                    $snapshot = $this->rxNormService->getOrCreateDrugSnapshot($snapshot->rxcui);
+
+                    // If refresh failed, use existing snapshot
+                    if (!$snapshot) {
+                        $snapshot = $medication->drugSnapshot;
+                    }
+                }
+
                 return [
                     'id' => $medication->id,
                     'rxcui' => $medication->rxcui,
@@ -68,12 +80,13 @@ class UserMedicationController extends Controller
             ->first();
 
         if ($existing) {
+            $existing->load('drugSnapshot');
             return response()->json([
                 'message' => 'This medication is already in your list',
                 'data' => [
                     'id' => $existing->id,
                     'rxcui' => $existing->rxcui,
-                    'drug_name' => $existing->drug_name,
+                    'drug_name' => $existing->drugSnapshot->drug_name,
                 ],
             ], 409);
         }

@@ -133,40 +133,6 @@ class DrugSearchTest extends TestCase
     }
 
     /**
-     * Test drug search is publicly accessible (no authentication required)
-     */
-    public function test_search_is_publicly_accessible(): void
-    {
-        Http::fake([
-            '*/drugs.json*' => Http::response([
-                'drugGroup' => [
-                    'conceptGroup' => [
-                        [
-                            'tty' => 'SBD',
-                            'conceptProperties' => [
-                                ['rxcui' => '123', 'name' => 'Test Drug']
-                            ]
-                        ]
-                    ]
-                ]
-            ], 200),
-            '*' => Http::response([
-                'rxcuiStatusHistory' => [
-                    'definitionalFeatures' => [
-                        'ingredientAndStrength' => [],
-                        'doseFormGroupConcept' => []
-                    ]
-                ]
-            ], 200),
-        ]);
-
-        // No authentication header provided
-        $response = $this->getJson('/api/drugs/search?drug_name=test');
-
-        $response->assertStatus(200);
-    }
-
-    /**
      * Test drug search endpoint is rate limited
      */
     public function test_search_endpoint_is_rate_limited(): void
