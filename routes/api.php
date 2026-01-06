@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DrugController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\UserMedicationController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -31,7 +31,9 @@ Route::middleware('throttle:60,1')->group(function () {
  * Requires authentication via Sanctum token
  */
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
+    Route::prefix('user/medications')->group(function () {
+        Route::get('/', [UserMedicationController::class, 'index']);
+        Route::post('/', [UserMedicationController::class, 'store']);
+        Route::delete('/{rxcui}', [UserMedicationController::class, 'destroy']);
     });
 });

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DrugSnapshot;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -28,6 +29,11 @@ class RxNormService
      * Cache TTL in seconds (24 hours)
      */
     private const CACHE_TTL = 86400;
+
+    /**
+     * Days before a drug snapshot is considered stale
+     */
+    private const SNAPSHOT_STALE_DAYS = 10;
 
     /**
      * Search for drugs using the getDrugs endpoint
@@ -256,5 +262,85 @@ class RxNormService
         // For now, we'll use a pattern-based approach if using Redis
         // For file/database cache, this would need different implementation
         return true;
+    }
+
+    /**
+     * Get or create/update drug snapshot
+     * 
+     * Checks if snapshot exists and is fresh, otherwise fetches from API
+     *
+     * @param string $rxcui
+     * @param bool $forceRefresh
+     * @return DrugSnapshot|null
+     */
+    public function getOrCreateDrugSnapshot(string $rxcui, bool $forceRefresh = false): ?DrugSnapshot
+    {
+        // Check if snapshot exists
+        $snapshot = DrugSnapshot::find($rxcui);
+
+        // If snapshot exists and is fresh, return it
+        if ($snapshot && !$forceRefresh && !$snapshot->isStale(self::SNAPSHOT_STALE_DAYS)) {
+            return $snapshot;
+        }
+
+        // Fetch fresh data from API
+        $drugData = $this->fetchDrugFromApi($rxcui);
+
+        if (!$drugData) {
+            return null;
+        }
+
+        // Create or update snapshot
+        return DrugSnapshot::updateOrCreate(
+            ['rxcui' => $rxcui],
+            [
+                'drug_name' => $drugData['name'],
+                'ingredient_base_names' => $drugData['ingredient_base_names'],
+                'dosage_forms' => $drugData['dosage_forms'],
+                'last_synced_at' => now(),
+            ]
+        );
+    }
+
+    /**
+     * Fetch drug details from RxNorm API
+     *
+     * @param string $rxcui
+     * @return array|null
+     */
+    private function fetchDrugFromApi(string $rxcui): ?array
+    {
+        try {
+            $response = Http::timeout(self::TIMEOUT)
+                ->get(self::BASE_URL . '/rxcui/' . $rxcui . '/properties.json');
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $data = $response->json();
+            $properties = $data['properties'] ?? null;
+
+            if (!$properties || empty($properties['name'])) {
+                return null;
+            }
+
+            // Get additional details from history status
+            $historyData = $this->getRxcuiHistoryStatus($rxcui);
+
+            return [
+                'rxcui' => $rxcui,
+                'name' => $properties['name'],
+                'ingredient_base_names' => $historyData['ingredient_base_names'],
+                'dosage_forms' => $historyData['dosage_forms'],
+            ];
+        } catch (\Exception $e) {
+            Log::warning('RxNorm fetchDrugFromApi failed', [
+                'rxcui' => $rxcui,
+                'error' => $e->getMessage()
+            ]);
+            
+            return null;
+        }
     }
 }
