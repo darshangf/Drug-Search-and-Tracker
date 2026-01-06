@@ -1,14 +1,28 @@
 {
 	"info": {
-		"_postman_id": "efa2257e-4d53-4402-92d9-dc2b9abd9982",
+		"_postman_id": "c7a11c3a-bfda-4902-aad4-143c063cff94",
 		"name": "Drug Search & Tracker",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "21154571",
-		"_collection_link": "https://cloudy-astronaut-755731.postman.co/workspace/My-Workspace~1df63ffa-bd96-4225-83af-f4bfb7c885c8/collection/21154571-efa2257e-4d53-4402-92d9-dc2b9abd9982?action=share&source=collection_link&creator=21154571"
+		"_collection_link": "https://cloudy-astronaut-755731.postman.co/workspace/My-Workspace~1df63ffa-bd96-4225-83af-f4bfb7c885c8/collection/21154571-c7a11c3a-bfda-4902-aad4-143c063cff94?action=share&source=collection_link&creator=21154571"
 	},
 	"item": [
 		{
 			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"pm.globals.set('access_token', response.data.access_token);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
 			"protocolProfileBehavior": {
 				"disabledSystemHeaders": {
 					"accept": true
@@ -25,7 +39,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"email\" : \"jugal@yopmail.com\",\n    \"password\" : \"password\"\n}",
+					"raw": "{\n    \"email\" : \"john_doe@yopmail.com\",\n    \"password\" : \"password\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -52,6 +66,20 @@
 		},
 		{
 			"name": "Register",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"pm.globals.set('access_token', response.data.access_token);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
 			"protocolProfileBehavior": {
 				"disabledSystemHeaders": {
 					"accept": true
@@ -71,7 +99,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\" : \"John Doe\",\n    \"email\" : \"drupal@yopmail.com\",\n    \"password\" : \"password\",\n    \"password_confirmation\" : \"password\"\n}",
+					"raw": "{\n    \"name\" : \"John Doe\",\n    \"email\" : \"john_doe@yopmail.com\",\n    \"password\" : \"password\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -100,14 +128,7 @@
 			"name": "Public Drug Search",
 			"request": {
 				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "1|7lJ4d8gDCCKRYxDHOPH2lwBqell8z0921ZPHoWi3ad36bc2b",
-							"type": "string"
-						}
-					]
+					"type": "noauth"
 				},
 				"method": "GET",
 				"header": [
@@ -150,13 +171,19 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "1|5cv6ry4EZGPvA2ps2ZQJC8oOWuA7omMyCCRxJkLG9b7a5079",
+							"value": "{{access_token}}",
 							"type": "string"
 						}
 					]
 				},
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
 				"url": {
 					"raw": "http://127.0.0.1:8000/api/user/medications",
 					"protocol": "http",
@@ -189,7 +216,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "28|hKcfLLj4A97zby8KsJRdlAexHfaqkBzXHqaXx1Ys4b010cad",
+							"value": "{{access_token}}",
 							"type": "string"
 						}
 					]
@@ -204,7 +231,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\": \"Test\",\n    \"trainer\": \"Trainer 1\",\n    \"date\": \"2025-06-12\",\n    \"slots\": 3\n}",
+					"raw": "{\n    \"rxcui\": \"1303159\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -212,7 +239,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/workouts",
+					"raw": "http://127.0.0.1:8000/api/user/medications",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -223,7 +250,8 @@
 					"port": "8000",
 					"path": [
 						"api",
-						"workouts"
+						"user",
+						"medications"
 					]
 				}
 			},
@@ -242,7 +270,7 @@
 					"bearer": [
 						{
 							"key": "token",
-							"value": "28|hKcfLLj4A97zby8KsJRdlAexHfaqkBzXHqaXx1Ys4b010cad",
+							"value": "{{access_token}}",
 							"type": "string"
 						}
 					]
@@ -255,17 +283,8 @@
 						"type": "text"
 					}
 				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"title\": \"Test\",\n    \"trainer\": \"Trainer 2\",\n    \"date\": \"2025-06-12\",\n    \"slots\": 3\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/workouts/3",
+					"raw": "http://127.0.0.1:8000/api/user/medications/1303159",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -276,8 +295,9 @@
 					"port": "8000",
 					"path": [
 						"api",
-						"workouts",
-						"3"
+						"user",
+						"medications",
+						"1303159"
 					]
 				}
 			},

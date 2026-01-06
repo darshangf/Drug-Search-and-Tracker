@@ -155,6 +155,10 @@ DrugSnapshot::factory()->aspirin81()->stale()->create();
 
 Comprehensive documentation is available in the `docs/` directory:
 
+### Postman Collection
+  - [Collection URL](docs/postman/Drug%20Search%20&%20Tracker.postman_collection.json.md)
+
+
 ### For API Users
 - **Authentication**:
   - [API Documentation](docs/API_AUTHENTICATION.md)
