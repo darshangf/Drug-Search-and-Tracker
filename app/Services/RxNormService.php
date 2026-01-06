@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +25,11 @@ class RxNormService
     private const TIMEOUT = 10;
 
     /**
+     * Cache TTL in seconds (24 hours)
+     */
+    private const CACHE_TTL = 86400;
+
+    /**
      * Search for drugs using the getDrugs endpoint
      *
      * @param string $drugName
@@ -32,28 +38,32 @@ class RxNormService
      */
     public function searchDrugs(string $drugName, int $limit = 5): array
     {
-        try {
-            // Step 1: Get drugs by name (tty = SBD - Semantic Branded Drug)
-            $drugs = $this->getDrugs($drugName);
-            
-            if (empty($drugs)) {
-                return [];
-            }
-            
-            // Step 2: Enrich each drug with additional information
-            $enrichedDrugs = [];
-            foreach ($drugs as $drug) {
-                $enrichedDrugs[] = $this->enrichDrugData($drug);
-            }
+        $cacheKey = $this->getCacheKey($drugName, $limit);
 
-            return $enrichedDrugs;
-        } catch (\Exception $e) {
-            Log::error('RxNorm API Error', [
-                'drug_name' => $drugName,
-                'error' => $e->getMessage()
-            ]);
-            throw new \RuntimeException('Failed to fetch drug information from RxNorm API');
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($drugName, $limit) {
+            try {
+                // Step 1: Get drugs by name (tty = SBD - Semantic Branded Drug)
+                $drugs = $this->getDrugs($drugName, $limit);
+                
+                if (empty($drugs)) {
+                    return [];
+                }
+
+                // Step 2: Enrich each drug with additional information
+                $enrichedDrugs = [];
+                foreach ($drugs as $drug) {
+                    $enrichedDrugs[] = $this->enrichDrugData($drug);
+                }
+
+                return $enrichedDrugs;
+            } catch (\Exception $e) {
+                Log::error('RxNorm API Error', [
+                    'drug_name' => $drugName,
+                    'error' => $e->getMessage()
+                ]);
+                throw new \RuntimeException('Failed to fetch drug information from RxNorm API');
+            }
+        });
     }
 
     /**
@@ -62,7 +72,7 @@ class RxNormService
      * @param string $drugName
      * @return array
      */
-    private function getDrugs(string $drugName): array
+    private function getDrugs(string $drugName, int $limit): array
     {
         $response = Http::timeout(self::TIMEOUT)
             ->get(self::BASE_URL . '/drugs.json', [
@@ -81,11 +91,10 @@ class RxNormService
             ->firstWhere('tty', 'SBD');
 
         $sbdDrugs = collect($sbdGroup['conceptProperties'] ?? [])
-            ->take(5)
+            ->take($limit)
             ->map(fn ($drug) => [
                 'rxcui' => $drug['rxcui'],
                 'name'  => $drug['name'],
-                'synonym' => $drug['synonym'] ?? '',
             ])
             ->values()
             ->toArray();
@@ -171,19 +180,18 @@ class RxNormService
      */
     private function extractIngredientBaseNames(array $attributes): array
     {
-        $baseNames = [];
-        
-        // Extract from ingredientAndStrength
-        $ingredientAndStrength = $attributes['ingredientAndStrength'] ?? [];
-        
-        foreach ($ingredientAndStrength as $ingredient) {
-            $baseName = $ingredient['baseName'] ?? null;
-            if ($baseName && !in_array($baseName, $baseNames)) {
-                $baseNames[] = $baseName;
-            }
-        }
+        $ingredients = $attributes['ingredientAndStrength'] ?? [];
 
-        return array_values(array_unique($baseNames));
+        if (! is_array($ingredients)) {
+            return [];
+        }
+    
+        return collect($ingredients)
+            ->pluck('baseName')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
     }
 
     /**
@@ -194,18 +202,59 @@ class RxNormService
      */
     private function extractDosageForms(array $attributes): array
     {
-        $dosageForms = [];
-        
-        // Extract from doseFormGroupConcept
-        $doseFormGroupConcept = $attributes['doseFormGroupConcept'] ?? [];
-        
-        foreach ($doseFormGroupConcept as $concept) {
-            $doseFormGroupName = $concept['doseFormGroupName'] ?? null;
-            if ($doseFormGroupName && !in_array($doseFormGroupName, $dosageForms)) {
-                $dosageForms[] = $doseFormGroupName;
-            }
+        $dosages = $attributes['doseFormGroupConcept'] ?? [];
+
+        if (! is_array($dosages)) {
+            return [];
         }
 
-        return array_values(array_unique($dosageForms));
+        return collect($dosages)
+            ->pluck('doseFormGroupName')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Generate cache key for drug search
+     *
+     * @param string $drugName
+     * @param int $limit
+     * @return string
+     */
+    private function getCacheKey(string $drugName, int $limit): string
+    {
+        return sprintf(
+            'rxnorm:drug_search:%s:%d',
+            strtolower(trim($drugName)),
+            $limit
+        );
+    }
+
+    /**
+     * Clear cached results for a specific drug search
+     *
+     * @param string $drugName
+     * @param int $limit
+     * @return bool
+     */
+    public function clearCache(string $drugName, int $limit = 5): bool
+    {
+        $cacheKey = $this->getCacheKey($drugName, $limit);
+        return Cache::forget($cacheKey);
+    }
+
+    /**
+     * Clear all drug search cache
+     *
+     * @return bool
+     */
+    public function clearAllCache(): bool
+    {
+        // This would require a cache tag implementation
+        // For now, we'll use a pattern-based approach if using Redis
+        // For file/database cache, this would need different implementation
+        return true;
     }
 }

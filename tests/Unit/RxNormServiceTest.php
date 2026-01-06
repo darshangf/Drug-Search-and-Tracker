@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\RxNormService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -49,7 +50,7 @@ class RxNormServiceTest extends TestCase
             ], 200),
             '*/rxcui/213269/historystatus.json' => Http::response([
                 'rxcuiStatusHistory' => [
-                    'attributes' => [
+                    'definitionalFeatures' => [
                         'ingredientAndStrength' => [
                             ['baseName' => 'Aspirin']
                         ],
@@ -61,7 +62,7 @@ class RxNormServiceTest extends TestCase
             ], 200),
             '*/rxcui/198440/historystatus.json' => Http::response([
                 'rxcuiStatusHistory' => [
-                    'attributes' => [
+                    'definitionalFeatures' => [
                         'ingredientAndStrength' => [
                             ['baseName' => 'Aspirin']
                         ],
@@ -132,7 +133,7 @@ class RxNormServiceTest extends TestCase
             ], 200),
             '*' => Http::response([
                 'rxcuiStatusHistory' => [
-                    'attributes' => [
+                    'definitionalFeatures' => [
                         'ingredientAndStrength' => [],
                         'doseFormGroupConcept' => []
                     ]
@@ -180,7 +181,7 @@ class RxNormServiceTest extends TestCase
             ], 200),
             '*/rxcui/123/historystatus.json' => Http::response([
                 'rxcuiStatusHistory' => [
-                    'attributes' => [
+                    'definitionalFeatures' => [
                         'ingredientAndStrength' => [
                             ['baseName' => 'Ingredient A'],
                             ['baseName' => 'Ingredient B'],
@@ -219,7 +220,7 @@ class RxNormServiceTest extends TestCase
             ], 200),
             '*/rxcui/456/historystatus.json' => Http::response([
                 'rxcuiStatusHistory' => [
-                    'attributes' => [
+                    'definitionalFeatures' => [
                         'ingredientAndStrength' => [],
                         'doseFormGroupConcept' => [
                             ['doseFormGroupName' => 'Oral Tablet'],
@@ -236,5 +237,132 @@ class RxNormServiceTest extends TestCase
         $this->assertCount(2, $result[0]['dosage_forms']);
         $this->assertContains('Oral Tablet', $result[0]['dosage_forms']);
         $this->assertContains('Injectable', $result[0]['dosage_forms']);
+    }
+
+    /**
+     * Test search results are cached
+     */
+    public function test_search_results_are_cached(): void
+    {
+        Cache::flush();
+
+        Http::fake([
+            '*/drugs.json*' => Http::response([
+                'drugGroup' => [
+                    'conceptGroup' => [
+                        [
+                            'tty' => 'SBD',
+                            'conceptProperties' => [
+                                ['rxcui' => '123', 'name' => 'Test Drug']
+                            ]
+                        ]
+                    ]
+                ]
+            ], 200),
+            '*' => Http::response([
+                'rxcuiStatusHistory' => [
+                    'definitionalFeatures' => [
+                        'ingredientAndStrength' => [],
+                        'doseFormGroupConcept' => []
+                    ]
+                ]
+            ], 200),
+        ]);
+
+        // First call - should hit the API
+        $result1 = $this->rxNormService->searchDrugs('aspirin');
+        
+        // Second call - should use cache
+        $result2 = $this->rxNormService->searchDrugs('aspirin');
+
+        // Results should be identical
+        $this->assertEquals($result1, $result2);
+
+        // Verify cache was used (HTTP should only be called once per endpoint)
+        Http::assertSentCount(2); // One for getDrugs, one for historystatus
+    }
+
+    /**
+     * Test cache can be cleared
+     */
+    public function test_cache_can_be_cleared(): void
+    {
+        Cache::flush();
+
+        Http::fake([
+            '*/drugs.json*' => Http::response([
+                'drugGroup' => [
+                    'conceptGroup' => [
+                        [
+                            'tty' => 'SBD',
+                            'conceptProperties' => [
+                                ['rxcui' => '456', 'name' => 'Test Drug']
+                            ]
+                        ]
+                    ]
+                ]
+            ], 200),
+            '*' => Http::response([
+                'rxcuiStatusHistory' => [
+                    'definitionalFeatures' => [
+                        'ingredientAndStrength' => [],
+                        'doseFormGroupConcept' => []
+                    ]
+                ]
+            ], 200),
+        ]);
+
+        // First call
+        $this->rxNormService->searchDrugs('ibuprofen');
+
+        // Clear cache
+        $cleared = $this->rxNormService->clearCache('ibuprofen');
+        $this->assertTrue($cleared);
+
+        // Second call should hit API again
+        $this->rxNormService->searchDrugs('ibuprofen');
+
+        // HTTP should be called twice (once before clear, once after)
+        Http::assertSentCount(4); // 2 calls × 2 endpoints
+    }
+
+    /**
+     * Test different search terms have different cache keys
+     */
+    public function test_different_search_terms_have_different_cache(): void
+    {
+        Cache::flush();
+
+        Http::fake([
+            '*/drugs.json*' => Http::response([
+                'drugGroup' => [
+                    'conceptGroup' => [
+                        [
+                            'tty' => 'SBD',
+                            'conceptProperties' => [
+                                ['rxcui' => '789', 'name' => 'Test Drug']
+                            ]
+                        ]
+                    ]
+                ]
+            ], 200),
+            '*' => Http::response([
+                'rxcuiStatusHistory' => [
+                    'definitionalFeatures' => [
+                        'ingredientAndStrength' => [],
+                        'doseFormGroupConcept' => []
+                    ]
+                ]
+            ], 200),
+        ]);
+
+        // Search for aspirin
+        $this->rxNormService->searchDrugs('aspirin');
+        
+        // Search for ibuprofen (different term)
+        $this->rxNormService->searchDrugs('ibuprofen');
+
+        // Both should hit the API (different cache keys)
+        Http::assertSentCount(4); // 2 searches × 2 endpoints each
     }
 }

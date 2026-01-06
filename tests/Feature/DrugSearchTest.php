@@ -38,7 +38,7 @@ class DrugSearchTest extends TestCase
             ], 200),
             '*/rxcui/213269/historystatus.json' => Http::response([
                 'rxcuiStatusHistory' => [
-                    'attributes' => [
+                    'definitionalFeatures' => [
                         'ingredientAndStrength' => [
                             ['baseName' => 'Aspirin']
                         ],
@@ -152,7 +152,7 @@ class DrugSearchTest extends TestCase
             ], 200),
             '*' => Http::response([
                 'rxcuiStatusHistory' => [
-                    'attributes' => [
+                    'definitionalFeatures' => [
                         'ingredientAndStrength' => [],
                         'doseFormGroupConcept' => []
                     ]
@@ -164,5 +164,47 @@ class DrugSearchTest extends TestCase
         $response = $this->getJson('/api/drugs/search?drug_name=test');
 
         $response->assertStatus(200);
+    }
+
+    /**
+     * Test drug search endpoint is rate limited
+     */
+    public function test_search_endpoint_is_rate_limited(): void
+    {
+        Http::fake([
+            '*/drugs.json*' => Http::response([
+                'drugGroup' => [
+                    'conceptGroup' => [
+                        [
+                            'tty' => 'SBD',
+                            'conceptProperties' => [
+                                ['rxcui' => '123', 'name' => 'Test Drug']
+                            ]
+                        ]
+                    ]
+                ]
+            ], 200),
+            '*' => Http::response([
+                'rxcuiStatusHistory' => [
+                    'definitionalFeatures' => [
+                        'ingredientAndStrength' => [],
+                        'doseFormGroupConcept' => []
+                    ]
+                ]
+            ], 200),
+        ]);
+
+        // Make 61 requests (limit is 60 per minute)
+        for ($i = 0; $i < 61; $i++) {
+            $response = $this->getJson('/api/drugs/search?drug_name=test' . $i);
+
+            if ($i < 60) {
+                // First 60 should succeed
+                $response->assertStatus(200);
+            } else {
+                // 61st request should be rate limited
+                $response->assertStatus(429);
+            }
+        }
     }
 }

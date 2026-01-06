@@ -16,21 +16,13 @@ use Illuminate\Http\JsonResponse;
 class DrugController extends Controller
 {
     /**
-     * RxNorm service instance
-     *
-     * @var RxNormService
-     */
-    protected RxNormService $rxNormService;
-
-    /**
      * Create a new controller instance
      *
      * @param RxNormService $rxNormService
      */
-    public function __construct(RxNormService $rxNormService)
-    {
-        $this->rxNormService = $rxNormService;
-    }
+    public function __construct(
+        protected RxNormService $rxNormService
+    ) {}
 
     /**
      * Search for drugs by name (Public endpoint - no authentication required)
