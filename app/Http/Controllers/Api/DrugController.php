@@ -39,23 +39,29 @@ class DrugController extends Controller
 
             if (empty($drugs)) {
                 return response()->json([
+                    'status' => false,
                     'message' => 'No drugs found matching your search',
                     'data' => []
                 ], 404);
             }
 
             return response()->json([
+                'status' => true,
                 'message' => 'Drugs retrieved successfully',
-                'count' => count($drugs),
-                'data' => $drugs
+                'data' => [
+                    'count' => count($drugs),
+                    'drugs' => $drugs,
+                ],
             ]);
         } catch (\RuntimeException $e) {
             return response()->json([
+                'status' => false,
                 'message' => 'Failed to fetch drug information',
                 'error' => $e->getMessage()
             ], 503);
         } catch (\Exception $e) {
             return response()->json([
+                'status' => false,
                 'message' => 'An unexpected error occurred',
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
             ], 500);

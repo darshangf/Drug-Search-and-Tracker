@@ -49,21 +49,26 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
+                'status',
                 'message',
-                'count',
                 'data' => [
-                    '*' => [
-                        'id',
-                        'rxcui',
-                        'drug_name',
-                        'ingredient_base_names',
-                        'dosage_forms',
-                        'added_at',
+                    'count',
+                    'medications' => [
+                        '*' => [
+                            'id',
+                            'rxcui',
+                            'drug_name',
+                            'ingredient_base_names',
+                            'dosage_forms',
+                        ]
                     ]
                 ]
             ])
             ->assertJson([
-                'count' => 3,
+                'status' => true,
+                'data' => [
+                    'count' => 3,
+                ],
             ]);
     }
 
@@ -110,6 +115,7 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJsonStructure([
+                'status',
                 'message',
                 'data' => [
                     'id',
@@ -117,10 +123,10 @@ class MedicationTest extends TestCase
                     'drug_name',
                     'ingredient_base_names',
                     'dosage_forms',
-                    'added_at',
                 ]
             ])
             ->assertJson([
+                'status' => true,
                 'message' => 'Medication added successfully',
                 'data' => [
                     'rxcui' => '213269',
@@ -156,6 +162,7 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJson([
+                'status' => false,
                 'message' => 'Invalid RXCUI. Drug not found in RxNorm database.',
             ]);
 
@@ -191,6 +198,7 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(409)
             ->assertJson([
+                'status' => false,
                 'message' => 'This medication is already in your list',
             ]);
     }
@@ -230,6 +238,7 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
+                'status' => true,
                 'message' => 'Medication removed successfully',
             ]);
 
@@ -248,6 +257,7 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(404)
             ->assertJson([
+                'status' => false,
                 'message' => 'Medication not found in your list',
             ]);
     }
@@ -375,6 +385,7 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJson([
+                'status' => true,
                 'data' => [
                     'drug_name' => 'Aspirin 81 MG Oral Tablet NEW',
                 ]
@@ -434,11 +445,14 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'count' => 1,
+                'status' => true,
                 'data' => [
-                    [
-                        'rxcui' => '213269',
-                        'drug_name' => 'Aspirin 81 MG Oral Tablet UPDATED',
+                    'count' => 1,
+                    'medications' => [
+                        [
+                            'rxcui' => '213269',
+                            'drug_name' => 'Aspirin 81 MG Oral Tablet UPDATED',
+                        ]
                     ]
                 ]
             ]);
@@ -478,11 +492,14 @@ class MedicationTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'count' => 1,
+                'status' => true,
                 'data' => [
-                    [
-                        'rxcui' => '213269',
-                        'drug_name' => 'Aspirin 81 MG Oral Tablet',
+                    'count' => 1,
+                    'medications' => [
+                        [
+                            'rxcui' => '213269',
+                            'drug_name' => 'Aspirin 81 MG Oral Tablet',
+                        ]
                     ]
                 ]
             ]);

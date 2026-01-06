@@ -54,20 +54,26 @@ class DrugSearchTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
+                'status',
                 'message',
-                'count',
                 'data' => [
-                    '*' => [
-                        'rxcui',
-                        'name',
-                        'ingredient_base_names',
-                        'dosage_forms',
+                    'count',
+                    'drugs' => [
+                        '*' => [
+                            'rxcui',
+                            'name',
+                            'ingredient_base_names',
+                            'dosage_forms',
+                        ]
                     ]
                 ]
             ])
             ->assertJson([
+                'status' => true,
                 'message' => 'Drugs retrieved successfully',
-                'count' => 1,
+                'data' => [
+                    'count' => 1,
+                ],
             ]);
     }
 
@@ -110,6 +116,7 @@ class DrugSearchTest extends TestCase
 
         $response->assertStatus(404)
             ->assertJson([
+                'status' => false,
                 'message' => 'No drugs found matching your search',
                 'data' => []
             ]);
@@ -128,6 +135,7 @@ class DrugSearchTest extends TestCase
 
         $response->assertStatus(503)
             ->assertJson([
+                'status' => false,
                 'message' => 'Failed to fetch drug information',
             ]);
     }

@@ -45,10 +45,13 @@ class AuthController extends Controller
         $result = $this->authService->register($request->validated());
 
         return response()->json([
+            'status' => true,
             'message' => 'User registered successfully',
-            'user' => $result['user'],
-            'access_token' => $result['token'],
-            'token_type' => 'Bearer',
+            'data' => [
+                'user' => $result['user'],
+                'access_token' => $result['token'],
+                'token_type' => 'Bearer',
+            ],
         ], 201);
     }
 
@@ -64,10 +67,13 @@ class AuthController extends Controller
         $result = $this->authService->login($request->validated());
 
         return response()->json([
+            'status' => true,
             'message' => 'Login successful',
-            'user' => $result['user'],
-            'access_token' => $result['token'],
-            'token_type' => 'Bearer',
+            'data' => [
+                'user' => $result['user'],
+                'access_token' => $result['token'],
+                'token_type' => 'Bearer',
+            ],
         ]);
     }
 }

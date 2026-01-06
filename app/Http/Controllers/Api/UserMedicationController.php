@@ -25,9 +25,12 @@ class UserMedicationController extends Controller
         $medications = $this->medicationService->getUserMedications($request->user());
 
         return response()->json([
+            'status' => true,
             'message' => 'Medications retrieved successfully',
-            'count' => $medications->count(),
-            'data' => $medications,
+            'data' => [
+                'count' => $medications->count(),
+                'medications' => $medications->values(),
+            ],
         ]);
     }
 
@@ -51,7 +54,10 @@ class UserMedicationController extends Controller
                 default => 400,
             };
 
-            $response = ['message' => $result['error']];
+            $response = [
+                'status' => false,
+                'message' => $result['error'],
+            ];
             
             if ($result['status'] === 'duplicate') {
                 $response['data'] = $result['data'];
@@ -63,6 +69,7 @@ class UserMedicationController extends Controller
         }
 
         return response()->json([
+            'status' => true,
             'message' => 'Medication added successfully',
             'data' => $result['data'],
         ], 201);
@@ -81,6 +88,7 @@ class UserMedicationController extends Controller
 
         if (!$result['success']) {
             return response()->json([
+                'status' => false,
                 'message' => $result['error'],
                 'errors' => [
                     'rxcui' => ['The specified medication does not exist in your list.']
@@ -89,6 +97,7 @@ class UserMedicationController extends Controller
         }
 
         return response()->json([
+            'status' => true,
             'message' => 'Medication removed successfully',
         ]);
     }

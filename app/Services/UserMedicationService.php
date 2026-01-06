@@ -31,7 +31,7 @@ class UserMedicationService
             // Check if snapshot is stale and refresh if needed
             if ($snapshot->isStale()) {
                 $refreshedSnapshot = $this->rxNormService->getOrCreateDrugSnapshot($snapshot->rxcui);
-                
+
                 // If refresh failed, use existing snapshot (graceful degradation)
                 if ($refreshedSnapshot) {
                     $snapshot = $refreshedSnapshot;
@@ -44,7 +44,6 @@ class UserMedicationService
                 'drug_name' => $snapshot->drug_name,
                 'ingredient_base_names' => $snapshot->ingredient_base_names ?? [],
                 'dosage_forms' => $snapshot->dosage_forms ?? [],
-                'added_at' => $medication->created_at->toISOString(),
             ];
         });
     }
@@ -103,7 +102,6 @@ class UserMedicationService
                 'drug_name' => $snapshot->drug_name,
                 'ingredient_base_names' => $snapshot->ingredient_base_names ?? [],
                 'dosage_forms' => $snapshot->dosage_forms ?? [],
-                'added_at' => $medication->created_at->toISOString(),
             ],
             'error' => null,
             'status' => 'created',
