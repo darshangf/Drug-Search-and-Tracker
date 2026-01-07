@@ -47,11 +47,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/login",
+					"raw": "{{base_url}}/api/login",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
+						"api",
 						"login"
 					]
 				}
@@ -101,11 +102,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/register",
+					"raw": "{{base_url}}/api/register",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
+						"api",
 						"register"
 					]
 				}
@@ -127,11 +129,12 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/drugs/search?drug_name=aspirin",
+					"raw": "{{base_url}}/api/drugs/search?drug_name=aspirin",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
+						"api",
 						"drugs",
 						"search"
 					],
@@ -167,11 +170,12 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/user/medications",
+					"raw": "{{base_url}}/api/user/medications",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
+						"api",
 						"user",
 						"medications"
 					]
@@ -215,11 +219,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{base_url}}/user/medications",
+					"raw": "{{base_url}}/api/user/medications",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
+						"api",
 						"user",
 						"medications"
 					]
@@ -254,11 +259,12 @@
 					}
 				],
 				"url": {
-					"raw": "{{base_url}}/user/medications/1303159",
+					"raw": "{{base_url}}/api/user/medications/1303159",
 					"host": [
 						"{{base_url}}"
 					],
 					"path": [
+						"api",
 						"user",
 						"medications",
 						"1303159"
