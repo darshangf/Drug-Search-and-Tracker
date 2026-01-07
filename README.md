@@ -157,6 +157,7 @@ Comprehensive documentation is available in the `docs/` directory:
 
 ### Postman Collection
   - [Collection URL](docs/postman/DrugSearchTracker.postman_collection.json)
+  - [Environment URL](docs/postman/DrugSearchTracker.postman_environment.json)
 
 
 ### For API Users

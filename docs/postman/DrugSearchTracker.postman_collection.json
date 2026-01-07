@@ -15,7 +15,7 @@
 					"script": {
 						"exec": [
 							"const response = pm.response.json();",
-							"pm.globals.set('access_token', response.data.access_token);"
+							"pm.environment.set(\"access_token\", response.data.access_token);"
 						],
 						"type": "text/javascript",
 						"packages": {},
@@ -47,17 +47,11 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/login",
-					"protocol": "http",
+					"raw": "{{base_url}}/login",
 					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
+						"{{base_url}}"
 					],
-					"port": "8000",
 					"path": [
-						"api",
 						"login"
 					]
 				}
@@ -72,7 +66,7 @@
 					"script": {
 						"exec": [
 							"const response = pm.response.json();",
-							"pm.globals.set('access_token', response.data.access_token);"
+							"pm.environment.set(\"access_token\", response.data.access_token);"
 						],
 						"type": "text/javascript",
 						"packages": {},
@@ -107,17 +101,11 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/register",
-					"protocol": "http",
+					"raw": "{{base_url}}/register",
 					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
+						"{{base_url}}"
 					],
-					"port": "8000",
 					"path": [
-						"api",
 						"register"
 					]
 				}
@@ -139,17 +127,11 @@
 					}
 				],
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/drugs/search?drug_name=aspirin",
-					"protocol": "http",
+					"raw": "{{base_url}}/drugs/search?drug_name=aspirin",
 					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
+						"{{base_url}}"
 					],
-					"port": "8000",
 					"path": [
-						"api",
 						"drugs",
 						"search"
 					],
@@ -185,17 +167,11 @@
 					}
 				],
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/user/medications",
-					"protocol": "http",
+					"raw": "{{base_url}}/user/medications",
 					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
+						"{{base_url}}"
 					],
-					"port": "8000",
 					"path": [
-						"api",
 						"user",
 						"medications"
 					]
@@ -239,17 +215,11 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/user/medications",
-					"protocol": "http",
+					"raw": "{{base_url}}/user/medications",
 					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
+						"{{base_url}}"
 					],
-					"port": "8000",
 					"path": [
-						"api",
 						"user",
 						"medications"
 					]
@@ -284,17 +254,11 @@
 					}
 				],
 				"url": {
-					"raw": "http://127.0.0.1:8000/api/user/medications/1303159",
-					"protocol": "http",
+					"raw": "{{base_url}}/user/medications/1303159",
 					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
+						"{{base_url}}"
 					],
-					"port": "8000",
 					"path": [
-						"api",
 						"user",
 						"medications",
 						"1303159"
